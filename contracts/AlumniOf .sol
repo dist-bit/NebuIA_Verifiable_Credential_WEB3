@@ -228,6 +228,19 @@ interface IEIP721 {
  * @dev Based VC by w3c
  */
 interface IEIP721Metadata is IEIP721 {
+    struct Schema {
+        string id;
+        string typeSchema;
+    }
+
+    // requiered field
+    struct EIP712Domain {
+        string name;
+        string version;
+        uint256 chainId;
+        address verifyingContract;
+    }
+
     /**
      * @dev The entity hat issued the credential
      */
@@ -247,6 +260,16 @@ interface IEIP721Metadata is IEIP721 {
      * @dev The credential types which declare at datao expect in this credential.
      */
     function typeCredential() external view returns (string memory);
+
+    /**
+     * @dev https://www.w3.org/TR/vc-data-model/#data-schemas
+     */
+    function schema() external view returns (Schema memory);
+
+    /**
+     * @dev protect against replay atack
+     */
+    function domain() external view returns (EIP712Domain memory);
 }
 
 contract EIP712 is IEIP721, IEIP721Metadata {
@@ -262,13 +285,10 @@ contract EIP712 is IEIP721, IEIP721Metadata {
     // Credential type
     string private _type;
 
-    // requiered field
-    struct EIP712Domain {
-        string name;
-        string version;
-        uint256 chainId;
-        address verifyingContract;
-    }
+    // Credential type
+    Schema private _schema;
+
+    EIP712Domain private _domain;
 
     // sample
     struct University {
@@ -305,6 +325,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
         string memory context_,
         string memory id_,
         string memory type_,
+        Schema memory schema_,
         address verifyingContract_,
         string memory name_,
         string memory version_,
@@ -314,15 +335,15 @@ contract EIP712 is IEIP721, IEIP721Metadata {
         _context = context_;
         _id = id_;
         _type = type_;
+        _schema = schema_;
+        _domain = EIP712Domain({
+            name: name_,
+            version: version_,
+            chainId: chain_,
+            verifyingContract: verifyingContract_
+        });
         // set credential types
-        DOMAIN_SEPARATOR = hash(
-            EIP712Domain({
-                name: name_,
-                version: version_,
-                chainId: chain_,
-                verifyingContract: verifyingContract_
-            })
-        );
+        DOMAIN_SEPARATOR = hash(_domain);
     }
 
     /**
@@ -344,6 +365,23 @@ contract EIP712 is IEIP721, IEIP721Metadata {
      */
     function id() public view virtual override returns (string memory) {
         return _id;
+    }
+
+    /**
+     * @dev See {IEIP721Metadata-schema}.
+     */
+    function schema() public view virtual override returns (Schema memory) {
+        return _schema;
+    }
+
+    function domain()
+        public
+        view
+        virtual
+        override
+        returns (EIP712Domain memory)
+    {
+        return _domain;
     }
 
     /**
@@ -749,6 +787,10 @@ contract AlumniOfVC is EIP712, Ownable {
             "https://www.w3.org/2018/credentials/examples/v1", // context
             "http://example.edu/credentials/1872", //id
             "AlumniCredential", // type
+            Schema(
+                "https://example.org/examples/degree.json",
+                "JsonSchemaValidator2018"
+            ), // schema
             0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC, // contract verifier
             "AlumniOf Verifiable Credential", // name credential
             "1", // version

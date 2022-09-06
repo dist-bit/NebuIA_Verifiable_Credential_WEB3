@@ -24,7 +24,7 @@ const types = {
 
 contract('AlumniOf', (accounts) => {
   it('Test AlumniOf signature', async () => {
-    const _id_nebuia = await AlumniOfVC.deployed();
+    const _credential = await AlumniOfVC.deployed();
     const _vc = await NebuVC.deployed();
     const signer = new ethers.Wallet('f4951e7e4a65b7c39576eaf474097bc376b5e3c825856dfd26bb9ec6307bc2db');
 
@@ -44,10 +44,13 @@ contract('AlumniOf', (accounts) => {
       ],
     };
 
+
+    //console.log(await _vc.issuer(_credential.address));
+
     //const bytesEIP = '0x064e656275494114deadbeefdeadbeefdeadbeefdeadbeefdeadbeef1343657274696669636174696f6e207469746c650200000000000000000000000000000000000000000000000000000000000000803231306161653663386639633763346232336565326364303437316337356163373632313037363133366439376631383761393538306139336562313831376333643762623966386462623734323665333366376436306632376237356564653836376666383362333330316138613562323439663932353931633838656365803231306161653663386639633763346232336565326364303437316337356163373632313037363133366439376631383761393538306139336562313831376333643762623966386462623734323665333366376436306632376237356564653836376666383362333330316138613562323439663932353931633838656365';
 
 
-    //const signature = await signer._signTypedData(domain, types, value);
+    const signature = await signer._signTypedData(domain, types, value);
 
     //console.log(_id_nebuia.address);
     //console.log(_vc.address);
@@ -58,13 +61,11 @@ contract('AlumniOf', (accounts) => {
       bytesEIP,
       signature); */
 
-    /*  let owner = await _id_nebuia.recoverSigner(
+    let owner = await _credential.recoverSigner(
         value,
         signature);
 
-        console.log(owner.universities); */
-
-   // assert.equal(owner, signer.address, "invalid signature");
+    assert.equal(owner, signer.address, "invalid signature");
 
 
     // assert.equal(await  _id_nebuia.symbol(), 'ID', "invalid symbol");

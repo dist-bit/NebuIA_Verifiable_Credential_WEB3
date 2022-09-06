@@ -11,11 +11,19 @@ interface IEIP721 {
 }
 
 contract NebuVC {
-    function check(address service, bytes memory _identity, bytes memory _signature)
-        public
-        view
-        returns (address)
-    {
+    // sample
+    struct VerifiableCredential {
+        string creator;
+        bytes signature;
+        uint256 issuanceDate;
+        uint256 expirationDate;
+    }
+
+    function check(
+        address service,
+        bytes memory _identity,
+        bytes memory _signature
+    ) public view returns (address) {
         IEIP721 token = IEIP721(service);
         return token.recoverSignerFromBytes(_identity, _signature);
     }
