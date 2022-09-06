@@ -202,13 +202,26 @@ library Address {
 
 interface IEIP721 {
     /**
-     * @dev Valdiate EIP712 siganture
+     * @dev Validate EIP712 signature
      * @return address signer
      */
     function recoverSignerFromBytes(
         bytes memory _identity,
         bytes memory _signature
     ) external view returns (address);
+
+    /**
+     * @dev Split signature to get digest (v,r,s)
+     * @return address signer
+     */
+    function splitSignatureFromBytes(bytes memory _signature)
+        external
+        view
+        returns (
+            uint8,
+            bytes32,
+            bytes32
+        );
 }
 
 /**
@@ -453,9 +466,23 @@ contract EIP712 is IEIP721, IEIP721Metadata {
         return (v, r, s);
     }
 
+    function splitSignatureFromBytes(bytes memory signature_)
+        public
+        pure
+        override
+        returns (
+            uint8,
+            bytes32,
+            bytes32
+        )
+    {
+        return splitSignature(signature_);
+    }
+
     function recoverSignerFromBytes(bytes memory data_, bytes memory signature_)
         public
         view
+        override
         returns (address)
     {
         uint8 v;
