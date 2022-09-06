@@ -72,8 +72,16 @@ contract('AlumniOf', (accounts) => {
     );
 
     const credentials = await _vc.getVCs();
-    console.log(credentials);
     assert.equal(credentials.length, 1, "credential not saved");
+
+    const valid = await _vc.verifyVC(
+      _credential.address,
+      signer.address,
+      bytesEIP,
+      signature,
+    );
+
+    assert.equal(valid, true, "invalid credential");
 
 
     const domainVC = await _vc.domain(_credential.address);
@@ -85,24 +93,5 @@ contract('AlumniOf', (accounts) => {
 
     const onwerVC = await _vc.owner(_credential.address);
     assert.equal(onwerVC, signer.address, "invalid domain name");
-
-    // assert.equal(await  _id_nebuia.symbol(), 'ID', "invalid symbol");
-
-    /*let balance = await  _id_nebuia.balanceOf(signer.address);
-    assert.equal(balance.toNumber(), 0, "invalid balance");
-
-    await  _id_nebuia.mint(signer.address,
-      'Certification title',
-      contents);
-
-    balance = await  _id_nebuia.balanceOf(signer.address);
-    assert.equal(balance.toNumber(), 1, "invalid balance");
-
-    let digest = await  _id_nebuia.generateDigest(
-      'Certification title',
-      contents);
-
-    let tokenOwner = await  _id_nebuia.ownerOf(digest);
-    assert.equal(tokenOwner, signer.address, "invalid owner"); */
   });
 });

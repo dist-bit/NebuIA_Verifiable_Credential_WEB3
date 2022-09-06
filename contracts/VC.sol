@@ -28,7 +28,7 @@ interface IEIP721 {
 
     function id() external view returns (string memory);
 
-    function typeCredential() external view returns (string memory);
+    function typeCredential() external view returns (string[] memory);
 
     function schema() external view returns (Schema memory);
 
@@ -55,6 +55,7 @@ contract NebuVC {
     struct StoreCredential {
         uint256 index;
         string[] context;
+        string[] typeCredential;
         uint256 issuanceDate;
         uint256 expirationDate;
         Proof proof;
@@ -124,6 +125,26 @@ contract NebuVC {
     }
 
     /**
+     * @dev Verify credential by signature and claim
+     */
+      function verifyVC(
+        address service_,
+        address owner_,
+        bytes memory identity_,
+        bytes memory signature_
+    ) public view returns (bool) {
+        // init subject contract
+        IEIP721 vc = IEIP721(service_);
+        // check signature
+        require(
+            owner_ == vc.recoverSignerFromBytes(identity_, signature_),
+            "signer not match"
+        );
+
+        return true;
+    }
+
+    /**
      * @dev Create credential in minimal form
      */
     function createVC(
@@ -152,13 +173,10 @@ contract NebuVC {
 
         uint256 index = _credentials[to_].length;
 
-        // context append
-
-
-
         StoreCredential memory storeCredential = StoreCredential(
             index + 1, // index store
             context(vc),
+            types(vc),
             block.timestamp, //issuanceDate,
             expiration_, // expiration
             proof,
@@ -202,6 +220,17 @@ contract NebuVC {
         returns (string[] memory)
     {
         return vc.context();
+    }
+
+    /**
+     * @dev Get contract subject types -https://www.w3.org/TR/vc-data-model/#types
+     */
+    function types(IEIP721 vc)
+        public
+        view
+        returns (string[] memory)
+    {
+        return vc.typeCredential();
     }
 
 
