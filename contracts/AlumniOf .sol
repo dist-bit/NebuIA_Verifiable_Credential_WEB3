@@ -250,7 +250,7 @@ interface IEIP721Metadata is IEIP721 {
     /**
      * @dev Set the context which stablishes e special terms e will  using.
      */
-    function context() external view returns (string memory);
+    function context() external view returns (string[] memory);
 
     /**
      * @dev Specify e identifier for the credenttial.
@@ -260,7 +260,7 @@ interface IEIP721Metadata is IEIP721 {
     /**
      * @dev The credential types which declare at datao expect in this credential.
      */
-    function typeCredential() external view returns (string memory);
+    function typeCredential() external view returns (string[] memory);
 
     /**
      * @dev https://www.w3.org/TR/vc-data-model/#data-schemas
@@ -278,13 +278,13 @@ contract EIP712 is IEIP721, IEIP721Metadata {
     string private _issuer;
 
     // Credential context
-    string private _context;
+    string[] private _context;
 
     // Credential identifier
     string private _id;
 
     // Credential type
-    string private _type;
+    string[] private _type;
 
     // Credential type
     Schema private _schema;
@@ -323,9 +323,9 @@ contract EIP712 is IEIP721, IEIP721Metadata {
 
     constructor(
         string memory issuer_,
-        string memory context_,
+        string[] memory context_,
         string memory id_,
-        string memory type_,
+        string[] memory type_,
         Schema memory schema_,
         address verifyingContract_,
         string memory name_,
@@ -357,7 +357,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
     /**
      * @dev See {IEIP721Metadata-context}.
      */
-    function context() public view virtual override returns (string memory) {
+    function context() public view virtual override returns (string[] memory) {
         return _context;
     }
 
@@ -393,7 +393,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
         view
         virtual
         override
-        returns (string memory)
+        returns (string[] memory)
     {
         return _type;
     }
@@ -782,16 +782,20 @@ contract EIP712 is IEIP721, IEIP721Metadata {
 
 /* ERC721,*/
 contract AlumniOfVC is EIP712, Ownable {
-    constructor()
+    constructor(
+        string memory issuer_, 
+        string[] memory context_,
+        string memory id_,
+        string[] memory type_,
+        Schema memory schema_
+        )
         EIP712(
-            "https://example.edu/issuers/565049", // issuer
-            "https://www.w3.org/2018/credentials/examples/v1", // context
-            "http://example.edu/credentials/1872", //id
-            "AlumniCredential", // type
-            Schema(
-                "https://example.org/examples/degree.json",
-                "JsonSchemaValidator2018"
-            ), // schema
+            issuer_,
+            context_,
+            id_,
+            type_,
+            schema_,
+            // domain
             0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC, // contract verifier
             "AlumniOf Verifiable Credential", // name credential
             "1", // version

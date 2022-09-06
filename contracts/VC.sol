@@ -24,7 +24,7 @@ interface IEIP721 {
     // metadata??
     function issuer() external view returns (string memory);
 
-    function context() external view returns (string memory);
+    function context() external view returns (string[] memory);
 
     function id() external view returns (string memory);
 
@@ -54,6 +54,7 @@ contract NebuVC {
 
     struct StoreCredential {
         uint256 index;
+        string[] context;
         uint256 issuanceDate;
         uint256 expirationDate;
         Proof proof;
@@ -62,7 +63,7 @@ contract NebuVC {
         bytes signature;
         bytes credentialSubject; // store credential as bytes
     }
-
+/*
     struct VerifiableCredential {
         string[] context;
         string id;
@@ -74,7 +75,11 @@ contract NebuVC {
         Proof proof;
         IEIP721.Schema credentialSchema;
     }
+*/
 
+    /**
+     * @dev Create proof object - https://www.w3.org/TR/vc-data-model/#proofs-signatures
+     */
     function cresteProof(IEIP721 vc, bytes memory signature_)
         internal
         view
@@ -98,6 +103,9 @@ contract NebuVC {
             );
     }
 
+    /**
+     * @dev Check if exist credentials with same signature that new
+     */
     function duplicate(address filter_, bytes memory signature_)
         internal
         view
@@ -115,6 +123,9 @@ contract NebuVC {
         return false;
     }
 
+    /**
+     * @dev Create credential in minimal form
+     */
     function createVC(
         address service_,
         address to_,
@@ -141,8 +152,13 @@ contract NebuVC {
 
         uint256 index = _credentials[to_].length;
 
+        // context append
+
+
+
         StoreCredential memory storeCredential = StoreCredential(
             index + 1, // index store
+            context(vc),
             block.timestamp, //issuanceDate,
             expiration_, // expiration
             proof,
@@ -155,6 +171,9 @@ contract NebuVC {
         _credentials[to_].push(storeCredential);
     }
 
+    /** 
+     * @dev Get all credentials from user - alny callable from owner
+     */
     function getVCs()
         public
         view
@@ -163,6 +182,9 @@ contract NebuVC {
         return _credentials[msg.sender];
     }
 
+    /**
+     * @dev Get contract subject domain - replay attacks
+     */
     function domain(IEIP721 vc)
         public
         view
@@ -171,10 +193,28 @@ contract NebuVC {
         return vc.domain();
     }
 
+    /**
+     * @dev Get contract subject context - https://www.w3.org/TR/vc-data-model/#contexts 
+     */
+    function context(IEIP721 vc)
+        public
+        view
+        returns (string[] memory)
+    {
+        return vc.context();
+    }
+
+
+    /**
+     * @dev Get contract subject owner
+     */
     function owner(IEIP721 vc) public view returns (address) {
         return vc.owner();
     }
 
+    /**
+     * @dev Return r, s, v => digest
+     */
     function splitSignature(bytes memory sig)
         internal
         pure

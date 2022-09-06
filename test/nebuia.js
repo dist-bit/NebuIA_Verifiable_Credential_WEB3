@@ -72,6 +72,7 @@ contract('AlumniOf', (accounts) => {
     );
 
     const credentials = await _vc.getVCs();
+    console.log(credentials);
     assert.equal(credentials.length, 1, "credential not saved");
 
 
