@@ -205,10 +205,10 @@ interface IEIP721 {
      * @dev Valdiate EIP712 siganture
      * @return address signer
      */
-    /*function recoverSignerFromBytes(
+    function recoverSignerFromBytes(
         bytes memory _identity,
         bytes memory _signature
-    ) external view returns (address); */
+    ) external view returns (address);
 }
 
 /**
@@ -233,10 +233,22 @@ interface IEIP721Metadata is IEIP721 {
     /**
      * @dev The credential types which declare at datao expect in this credential.
      */
-    function typeCredential() external view returns (string[] memory);
+    function typeCredential() external view returns (string memory);
 }
 
-contract EIP712 is IEIP721 {
+contract EIP712 is IEIP721, IEIP721Metadata {
+    // Credential issuer
+    string private _issuer;
+
+    // Credential context
+    string private _context;
+
+    // Credential identifier
+    string private _id;
+
+    // Credential type
+    string private _type;
+
     // requiered field
     struct EIP712Domain {
         string name;
@@ -275,15 +287,63 @@ contract EIP712 is IEIP721 {
 
     bytes32 DOMAIN_SEPARATOR;
 
-    constructor(string memory _name) {
+    constructor(
+        string memory issuer_,
+        string memory context_,
+        string memory id_,
+        string memory type_,
+        address verifyingContract_,
+        string memory name_,
+        string memory version_,
+        uint256 chain_
+    ) {
+        _issuer = issuer_;
+        _context = context_;
+        _id = id_;
+        _type = type_;
+        // set credential types
         DOMAIN_SEPARATOR = hash(
             EIP712Domain({
-                name: _name,
-                version: "1",
-                chainId: 1,
-                verifyingContract: 0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC
+                name: name_,
+                version: version_,
+                chainId: chain_,
+                verifyingContract: verifyingContract_
             })
         );
+    }
+
+    /**
+     * @dev See {IEIP721Metadata-issuer}.
+     */
+    function issuer() public view virtual override returns (string memory) {
+        return _issuer;
+    }
+
+    /**
+     * @dev See {IEIP721Metadata-context}.
+     */
+    function context() public view virtual override returns (string memory) {
+        return _context;
+    }
+
+    /**
+     * @dev See {IEIP721Metadata-id}.
+     */
+    function id() public view virtual override returns (string memory) {
+        return _id;
+    }
+
+    /**
+     * @dev See {IEIP721Metadata-type}.
+     */
+    function typeCredential()
+        public
+        view
+        virtual
+        override
+        returns (string memory)
+    {
+        return _type;
     }
 
     function hash(EIP712Domain memory eip712Domain)
@@ -393,6 +453,20 @@ contract EIP712 is IEIP721 {
         return (v, r, s);
     }
 
+    function recoverSignerFromBytes(bytes memory data_, bytes memory signature_)
+        public
+        view
+        returns (address)
+    {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+
+        (v, r, s) = splitSignature(signature_);
+        AlumniOf memory alumniOf = deserializeAlumniOf(data_);
+        return verify(alumniOf, v, r, s);
+    }
+
     function recoverSigner(AlumniOf memory _alumniOf, bytes memory _signature)
         public
         view
@@ -406,7 +480,7 @@ contract EIP712 is IEIP721 {
 
         //bytes memory serialize = serializeAlumniOf(_alumniOf);
         //AlumniOf memory alumniOf = deserializeAlumniOf(serialize);
-        
+
         // bytes memory serialize = serializeIdentity(_identity);
         //NebuIA_Identity memory identity = deserializeIdentity(serialize);
 
@@ -454,7 +528,7 @@ contract EIP712 is IEIP721 {
         pure
         returns (AlumniOf memory)
     {
-        (bytes memory id, uint256 offset) = ZeroCopySource.NextVarBytes(
+        (bytes memory idData, uint256 offset) = ZeroCopySource.NextVarBytes(
             data,
             0
         );
@@ -469,11 +543,11 @@ contract EIP712 is IEIP721 {
             universities[i] = university;
         }
 
-        return AlumniOf(string(id), universities);
+        return AlumniOf(string(idData), universities);
     }
 
     function serializeUniversity(University memory university)
-        public
+        private
         pure
         returns (
             bytes memory,
@@ -495,12 +569,12 @@ contract EIP712 is IEIP721 {
                 ZeroCopySink.WriteVarBytes(bytes(university.subjects[i]))
             );
         }
-        //bytes memory result = abi.encodePacked(nameBytes, serviceBytes);
+
         return (valueBytes, subjectsLenBytes, subjectsBytes);
     }
 
     function deserializeUniversity(bytes memory data, uint256 offset)
-        public
+        private
         pure
         returns (University memory, uint256)
     {
@@ -642,20 +716,20 @@ contract EIP712 is IEIP721 {
 
 /* ERC721,*/
 contract AlumniOfVC is EIP712, Ownable {
-    constructor() EIP712("AlumniOf Verifiable Credential") {}
-
-    //constructor() ERC721("NebuIAID", "ID") {}
+    constructor()
+        EIP712(
+            "https://example.edu/issuers/565049", // issuer
+            "https://www.w3.org/2018/credentials/examples/v1", // context
+            "http://example.edu/credentials/1872", //id
+            "AlumniCredential", // type
+            0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC, // contract verifier
+            "AlumniOf Verifiable Credential", // name credential
+            "1", // version
+            1 // chain id
+        )
+    {}
 
     function viewVersion() public view onlyOwner returns (string memory) {
         return "alumniOf";
     }
-
-    /*function mint(
-        NebuIA_Identity memory identity,
-        address _owner
-        //bytes memory signature
-    ) public onlyOwner {
-        bytes32 tokenId = sign(identity);
-        _safeMint(_owner, tokenId);
-    } */
 }
