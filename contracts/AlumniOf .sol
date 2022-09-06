@@ -201,6 +201,20 @@ library Address {
 }
 
 interface IEIP721 {
+
+    struct Schema {
+        string id;
+        string typeSchema;
+    }
+
+    // requiered field
+    struct EIP712Domain {
+        string name;
+        string version;
+        uint256 chainId;
+        address verifyingContract;
+    }
+
     /**
      * @dev Validate EIP712 signature
      * @return address signer
@@ -228,19 +242,6 @@ interface IEIP721 {
  * @dev Based VC by w3c
  */
 interface IEIP721Metadata is IEIP721 {
-    struct Schema {
-        string id;
-        string typeSchema;
-    }
-
-    // requiered field
-    struct EIP712Domain {
-        string name;
-        string version;
-        uint256 chainId;
-        address verifyingContract;
-    }
-
     /**
      * @dev The entity hat issued the credential
      */
@@ -290,7 +291,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
 
     EIP712Domain private _domain;
 
-    // sample
+    // sample claim
     struct University {
         string value; // university name
         string[] subjects; // subjects of student in university
