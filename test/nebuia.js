@@ -44,18 +44,17 @@ contract('AlumniOf', (accounts) => {
       ],
     };
 
-
-    //console.log(await _vc.issuer(_credential.address));
-
     // serialized value
     const bytesEIP = '0x0969645f73616d706c650100000000000000000000000000000000000000000000000000000000000000045541454d0200000000000000000000000000000000000000000000000000000000000000077370616e69736807656e676c697368';
 
 
     const signature = await signer._signTypedData(domain, types, value);
 
-    //console.log(_id_nebuia.address);
-    //console.log(_vc.address);
-    // (v, r, s) = digest = siganture
+    const encode = await _credential.serializeAlumniOf(value);
+    const decode = await _credential.deserializeAlumniOf(encode);
+
+    //assert.equal(decode.universities, value.universities, "invalid encode/decode");
+    // (v, r, s) = digest = signature
 
     let owner = await _credential.recoverSigner(
       value,
@@ -63,7 +62,7 @@ contract('AlumniOf', (accounts) => {
 
     assert.equal(owner, signer.address, "invalid signature");
 
-    await _vc.createVC(
+    const tx = await _vc.createVC(
       _credential.address,
       signer.address,
       bytesEIP,
@@ -71,10 +70,14 @@ contract('AlumniOf', (accounts) => {
       1662503835, // expiration
     );
 
-    const credentials = await _vc.getVCs();
+    console.log('Gas create VC: ', tx.receipt.gasUsed);
+
+    const credentials = await _vc.getVCFromUser();
+    //console.log(credentials);
+
     assert.equal(credentials.length, 1, "credential not saved");
 
-    const valid = await _vc.verifyVC(
+    let valid = await _vc.verifyVC(
       signer.address,
       0,
       signature,
@@ -82,6 +85,20 @@ contract('AlumniOf', (accounts) => {
 
     assert.equal(valid, true, "invalid credential");
 
+    const revoke = await _vc.revokeVC(
+      signer.address,
+      0,
+    );
+
+    console.log('Gas revoke: ', revoke.receipt.gasUsed);
+
+    valid = await _vc.verifyVC(
+      signer.address,
+      0,
+      signature,
+    );
+
+    assert.equal(valid, false, "invalid credential");
 
     const domainVC = await _vc.domain(_credential.address);
 

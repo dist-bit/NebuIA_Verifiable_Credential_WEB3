@@ -102,106 +102,7 @@ abstract contract Ownable is Context {
     }
 }
 
-/**
- * @dev String operations.
- */
-library Strings {
-    bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
-
-    /**
-     * @dev Converts a `uint256` to its ASCII `string` decimal representation.
-     */
-    function toString(uint256 value) internal pure returns (string memory) {
-        // Inspired by OraclizeAPI's implementation - MIT licence
-        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
-
-        if (value == 0) {
-            return "0";
-        }
-        uint256 temp = value;
-        uint256 digits;
-        while (temp != 0) {
-            digits++;
-            temp /= 10;
-        }
-        bytes memory buffer = new bytes(digits);
-        while (value != 0) {
-            digits -= 1;
-            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
-            value /= 10;
-        }
-        return string(buffer);
-    }
-
-    /**
-     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation.
-     */
-    function toHexString(uint256 value) internal pure returns (string memory) {
-        if (value == 0) {
-            return "0x00";
-        }
-        uint256 temp = value;
-        uint256 length = 0;
-        while (temp != 0) {
-            length++;
-            temp >>= 8;
-        }
-        return toHexString(value, length);
-    }
-
-    /**
-     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
-     */
-    function toHexString(uint256 value, uint256 length)
-        internal
-        pure
-        returns (string memory)
-    {
-        bytes memory buffer = new bytes(2 * length + 2);
-        buffer[0] = "0";
-        buffer[1] = "x";
-        for (uint256 i = 2 * length + 1; i > 1; --i) {
-            buffer[i] = _HEX_SYMBOLS[value & 0xf];
-            value >>= 4;
-        }
-        require(value == 0, "Strings: hex length insufficient");
-        return string(buffer);
-    }
-}
-
-library Address {
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
-
-        uint256 size;
-        assembly {
-            size := extcodesize(account)
-        }
-        return size > 0;
-    }
-}
-
 interface IEIP721 {
-
     struct Schema {
         string id;
         string typeSchema;
@@ -268,6 +169,11 @@ interface IEIP721Metadata is IEIP721 {
     function schema() external view returns (Schema memory);
 
     /**
+     * @dev the identifier that  verify e signature
+     */
+    function verificationMethod() external view returns (string memory);
+
+    /**
      * @dev protect against replay atack
      */
     function domain() external view returns (EIP712Domain memory);
@@ -285,6 +191,9 @@ contract EIP712 is IEIP721, IEIP721Metadata {
 
     // Credential type
     string[] private _type;
+
+    // Credential verification method
+    string _verificationMethod;
 
     // Credential type
     Schema private _schema;
@@ -326,6 +235,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
         string[] memory context_,
         string memory id_,
         string[] memory type_,
+        string memory verificationMethod_,
         Schema memory schema_,
         address verifyingContract_,
         string memory name_,
@@ -336,7 +246,9 @@ contract EIP712 is IEIP721, IEIP721Metadata {
         _context = context_;
         _id = id_;
         _type = type_;
+        _verificationMethod = verificationMethod_;
         _schema = schema_;
+
         _domain = EIP712Domain({
             name: name_,
             version: version_,
@@ -373,6 +285,19 @@ contract EIP712 is IEIP721, IEIP721Metadata {
      */
     function schema() public view virtual override returns (Schema memory) {
         return _schema;
+    }
+
+    /**
+     * @dev See {IEIP721Metadata-verificationMethod}.
+     */
+    function verificationMethod()
+        public
+        view
+        virtual
+        override
+        returns (string memory)
+    {
+        return _verificationMethod;
     }
 
     function domain()
@@ -569,20 +494,14 @@ contract EIP712 is IEIP721, IEIP721Metadata {
         );
         bytes memory universitiesBytes = new bytes(0);
         for (uint256 i = 0; i < alumn.universities.length; i++) {
-            bytes memory valueBytes;
-            bytes memory subjectsLenBytes;
-            bytes memory subjectsBytes;
-            (valueBytes, subjectsLenBytes, subjectsBytes) = serializeUniversity(
+            bytes memory encodeUniversity = serializeUniversity(
                 alumn.universities[i]
             );
 
-            bytes memory result = abi.encodePacked(
-                valueBytes,
-                subjectsLenBytes,
-                subjectsBytes
+            universitiesBytes = abi.encodePacked(
+                universitiesBytes,
+                encodeUniversity
             );
-
-            universitiesBytes = abi.encodePacked(universitiesBytes, result);
         }
 
         return
@@ -615,11 +534,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
     function serializeUniversity(University memory university)
         private
         pure
-        returns (
-            bytes memory,
-            bytes memory,
-            bytes memory
-        )
+        returns (bytes memory)
     {
         bytes memory valueBytes = ZeroCopySink.WriteVarBytes(
             bytes(university.value)
@@ -636,7 +551,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
             );
         }
 
-        return (valueBytes, subjectsLenBytes, subjectsBytes);
+        return abi.encodePacked(valueBytes, subjectsLenBytes, subjectsBytes);
     }
 
     function deserializeUniversity(bytes memory data, uint256 offset)
@@ -783,17 +698,19 @@ contract EIP712 is IEIP721, IEIP721Metadata {
 /* ERC721,*/
 contract AlumniOfVC is EIP712, Ownable {
     constructor(
-        string memory issuer_, 
+        string memory issuer_,
         string[] memory context_,
         string memory id_,
         string[] memory type_,
+        string memory verificationMethod_,
         Schema memory schema_
-        )
+    )
         EIP712(
             issuer_,
             context_,
             id_,
             type_,
+            verificationMethod_,
             schema_,
             // domain
             0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC, // contract verifier
