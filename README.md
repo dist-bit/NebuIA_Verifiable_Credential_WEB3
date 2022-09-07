@@ -34,29 +34,13 @@ EIP 712
 
   
 
-> La firma de datos es un problema resuelto si lo único que nos importa son las cadenas de bytes. Desafortunadamente, en el mundo real nos preocupamos por los mensajes complejos y significativos. Hashing de datos estructurados no es trivial y los errores dan como resultado la pérdida de las propiedades de seguridad del sistema.
-
-> Como tal, se aplica el adagio "no hagas tu propia criptografía". En su lugar, se debe utilizar un método estándar bien probado y revisado por pares. Este EIP pretende ser ese estándar.
-
-> Este EIP tiene como objetivo mejorar la usabilidad de la firma de mensajes fuera de la cadena para su uso en la cadena. Estamos viendo una adopción creciente de la firma de mensajes fuera de la cadena, ya que ahorra gasolina y reduce la cantidad de transacciones en la cadena de bloques. Los mensajes actualmente firmados son una cadena hexadecimal opaca que se muestra al usuario con poco contexto sobre los elementos que componen el mensaje.
+> La firma de datos es un problema resuelto si lo único que nos importa son las cadenas de bytes. Desafortunadamente, en el mundo real nos preocupamos por los mensajes complejos y significativos. Hashing de datos estructurados no es trivial y los errores dan como resultado la pérdida de las propiedades de seguridad del sistema. Como tal, se aplica el adagio "no hagas tu propia criptografía". En su lugar, se debe utilizar un método estándar bien probado y revisado por pares. Este EIP pretende ser ese estándar. Este EIP tiene como objetivo mejorar la usabilidad de la firma de mensajes fuera de la cadena para su uso en la cadena. Estamos viendo una adopción creciente de la firma de mensajes fuera de la cadena, ya que ahorra gasolina y reduce la cantidad de transacciones en la cadena de bloques. Los mensajes actualmente firmados son una cadena hexadecimal opaca que se muestra al usuario con poco contexto sobre los elementos que componen el mensaje.
 
   
 
 EIP 1812
 
-> Los reclamos verificables fuera de la cadena reutilizables brindan una parte importante de la integración de contratos inteligentes con los requisitos organizacionales del mundo real, como cumplir con los requisitos regulatorios como KYC, GDPR, reglas de inversores acreditados, etc.
-
-> ERC-735 y ERC-780 proporcionan métodos para hacer afirmaciones que viven en cadena. Esto es útil para algunos casos de uso particulares, donde alguna afirmación sobre una dirección debe verificarse en cadena.
-
-> Sin embargo, en la mayoría de los casos es peligroso y, en algunos casos, ilegal (según las normas del RGPD de la UE, por ejemplo) registrar reclamos de identidad que contengan información de identificación personal (PII) en una base de datos pública inmutable como la cadena de bloques Ethereum.
-
-> Las representaciones y el modelo de datos de credenciales verificables de W3C, así como las especificaciones de mensajes de verificación de uPort, son soluciones fuera de la cadena propuestas.
-
-> Si bien se basan en estándares de la industria como JSON-LD y JWT, ninguno de ellos es fácil de integrar con el ecosistema Ethereum.
-
-> EIP-712 presenta un nuevo método para firmar datos de identidad de cadena. Esto proporciona un formato de datos basado en la codificación Solidity ABI que se puede analizar fácilmente en la cadena y una nueva llamada JSON-RPC que es fácilmente compatible con las billeteras Ethereum existentes y los clientes Web3.
-
-> Este formato permite que los reclamos verificables reutilizables fuera de la cadena se emitan de manera económica a los usuarios, quienes pueden presentarlos cuando sea necesario.
+> Los reclamos verificables fuera de la cadena reutilizables brindan una parte importante de la integración de contratos inteligentes con los requisitos organizacionales del mundo real, como cumplir con los requisitos regulatorios como KYC, GDPR, reglas de inversores acreditados, etc. ERC-735 y ERC-780 proporcionan métodos para hacer afirmaciones que viven en cadena. Esto es útil para algunos casos de uso particulares, donde alguna afirmación sobre una dirección debe verificarse en cadena. Sin embargo, en la mayoría de los casos es peligroso y, en algunos casos, ilegal (según las normas del RGPD de la UE, por ejemplo) registrar reclamos de identidad que contengan información de identificación personal (PII) en una base de datos pública inmutable como la cadena de bloques Ethereum. Las representaciones y el modelo de datos de credenciales verificables de W3C, así como las especificaciones de mensajes de verificación de uPort, son soluciones fuera de la cadena propuestas. Si bien se basan en estándares de la industria como JSON-LD y JWT, ninguno de ellos es fácil de integrar con el ecosistema Ethereum. EIP-712 presenta un nuevo método para firmar datos de identidad de cadena. Esto proporciona un formato de datos basado en la codificación Solidity ABI que se puede analizar fácilmente en la cadena y una nueva llamada JSON-RPC que es fácilmente compatible con las billeteras Ethereum existentes y los clientes Web3. Este formato permite que los reclamos verificables reutilizables fuera de la cadena se emitan de manera económica a los usuarios, quienes pueden presentarlos cuando sea necesario.
 
   
 
@@ -315,6 +299,286 @@ interface IEIP721Metadata is IEIP721 {
      */
     function domain() external view returns (EIP712Domain memory);
 }
+```
+
+## Contrato verificador
+
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+pragma experimental ABIEncoderV2;
+
+interface IEIP721 {
+    struct Schema {
+        string id;
+        string typeSchema;
+    }
+
+    struct EIP712Domain {
+        string name;
+        string version;
+        uint256 chainId;
+        address verifyingContract;
+    }
+
+    function recoverSignerFromBytes(
+        bytes memory _identity,
+        bytes memory _signature
+    ) external view returns (address);
+
+    // metadata??
+    function issuer() external view returns (string memory);
+
+    function context() external view returns (string[] memory);
+
+    function id() external view returns (string memory);
+
+    function typeCredential() external view returns (string[] memory);
+
+    function schema() external view returns (Schema memory);
+
+    function domain() external view returns (EIP712Domain memory);
+
+    // added if only subject can generate cv
+    function owner() external view returns (address);
+}
+
+contract NebuVC {
+    mapping(address => StoreCredential[]) private _credentials;
+
+    struct Proof {
+        string typeSignature;
+        uint256 created;
+        string proofPurpose;
+        string verificationMethod;
+        IEIP721.EIP712Domain domain;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
+
+    struct StoreCredential {
+        uint256 index;
+        string[] context;
+        string[] typeCredential;
+        uint256 issuanceDate;
+        uint256 expirationDate;
+        Proof proof;
+        bool revoke;
+        address issuer; // contract subject address
+        bytes signature;
+        bytes credentialSubject; // store credential as bytes
+    }
+/*
+    struct VerifiableCredential {
+        string[] context;
+        string id;
+        string[] typeCredential;
+        string issuer; // vc propertie
+        uint256 issuanceDate;
+        uint256 expirationDate;
+        bytes credentialSubject;
+        Proof proof;
+        IEIP721.Schema credentialSchema;
+    }
+*/
+
+    /**
+     * @dev Create proof object - https://www.w3.org/TR/vc-data-model/#proofs-signatures
+     */
+    function cresteProof(IEIP721 vc, bytes memory signature_)
+        internal
+        view
+        returns (Proof memory)
+    {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        (v, r, s) = splitSignature(signature_);
+        // create proof
+        return
+            Proof(
+                "secp256k1", // default eip712 https://eips.ethereum.org/EIPS/eip-712#signatures-and-hashing-overview
+                block.timestamp, //creates
+                "assertionMethod", //proofPurpose
+                "https://example.edu/issuers/14#key-1", //verificationMethod
+                domain(vc),
+                v,
+                r,
+                s
+            );
+    }
+
+    /**
+     * @dev Check if exist credentials with same signature that new
+     */
+    function duplicate(address filter_, bytes memory signature_)
+        internal
+        view
+        returns (bool)
+    {
+        StoreCredential[] memory credentials = _credentials[filter_];
+
+        uint256 arrayLength = credentials.length;
+        for (uint256 i = 0; i < arrayLength; i++) {
+            if (keccak256(signature_) == keccak256(credentials[i].signature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @dev Verify credential by signature and claim
+     */
+      function verifyVC(
+        address owner_,
+        uint index_,
+        bytes memory signature_
+    ) public view returns (bool) {
+        // get credential by index
+        StoreCredential memory credential = _credentials[owner_][index_];
+        // init subject contract
+        IEIP721 vc = IEIP721(credential.issuer);
+        // check signature
+        require(
+            owner_ == vc.recoverSignerFromBytes(credential.credentialSubject, signature_),
+            "signer not match"
+        );
+
+        return true;
+    }
+
+    /**
+     * @dev Create credential in minimal form
+     */
+    function createVC(
+        address service_,
+        address to_,
+        bytes memory identity_,
+        bytes memory signature_,
+        uint256 expiration_
+    ) public {
+        // init subject contract
+        IEIP721 vc = IEIP721(service_);
+
+        // check for subject deploy
+        require(msg.sender == owner(vc), "subject creator not match");
+
+        // reject duplicate credential with same signature
+        require(!duplicate(to_, signature_), "duplicate signature found");
+
+        // check signature
+        require(
+            to_ == vc.recoverSignerFromBytes(identity_, signature_),
+            "signer not match"
+        );
+
+        Proof memory proof = cresteProof(vc, signature_);
+
+        uint256 index = _credentials[to_].length;
+
+        StoreCredential memory storeCredential = StoreCredential(
+            index + 1, // index store
+            context(vc),
+            types(vc),
+            block.timestamp, //issuanceDate,
+            expiration_, // expiration
+            proof,
+            false,
+            service_, // contract subject
+            signature_, // signatur,
+            identity_ //credentialSubject
+        );
+
+        _credentials[to_].push(storeCredential);
+    }
+
+    /** 
+     * @dev Get all credentials from user - alny callable from owner
+     */
+    function getVCs()
+        public
+        view
+        returns (StoreCredential[] memory)
+    {
+        return _credentials[msg.sender];
+    }
+
+    /**
+     * @dev Get contract subject domain - replay attacks
+     */
+    function domain(IEIP721 vc)
+        public
+        view
+        returns (IEIP721.EIP712Domain memory)
+    {
+        return vc.domain();
+    }
+
+    /**
+     * @dev Get contract subject context - https://www.w3.org/TR/vc-data-model/#contexts 
+     */
+    function context(IEIP721 vc)
+        public
+        view
+        returns (string[] memory)
+    {
+        return vc.context();
+    }
+
+    /**
+     * @dev Get contract subject types -https://www.w3.org/TR/vc-data-model/#types
+     */
+    function types(IEIP721 vc)
+        public
+        view
+        returns (string[] memory)
+    {
+        return vc.typeCredential();
+    }
+
+
+    /**
+     * @dev Get contract subject owner
+     */
+    function owner(IEIP721 vc) public view returns (address) {
+        return vc.owner();
+    }
+
+    /**
+     * @dev Return r, s, v => digest
+     */
+    function splitSignature(bytes memory sig)
+        internal
+        pure
+        returns (
+            uint8,
+            bytes32,
+            bytes32
+        )
+    {
+        require(sig.length == 65);
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        assembly {
+            // first 32 bytes, after the length prefix
+            r := mload(add(sig, 32))
+            // second 32 bytes
+            s := mload(add(sig, 64))
+            // final byte (first byte of the next 32 bytes)
+            v := byte(0, mload(add(sig, 96)))
+        }
+
+        return (v, r, s);
+    }
+}
+
 ```
 
 ## Normative References
