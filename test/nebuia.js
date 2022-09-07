@@ -75,9 +75,8 @@ contract('AlumniOf', (accounts) => {
     assert.equal(credentials.length, 1, "credential not saved");
 
     const valid = await _vc.verifyVC(
-      _credential.address,
       signer.address,
-      bytesEIP,
+      0,
       signature,
     );
 

@@ -128,16 +128,17 @@ contract NebuVC {
      * @dev Verify credential by signature and claim
      */
       function verifyVC(
-        address service_,
         address owner_,
-        bytes memory identity_,
+        uint index_,
         bytes memory signature_
     ) public view returns (bool) {
+        // get credential by index
+        StoreCredential memory credential = _credentials[owner_][index_];
         // init subject contract
-        IEIP721 vc = IEIP721(service_);
+        IEIP721 vc = IEIP721(credential.issuer);
         // check signature
         require(
-            owner_ == vc.recoverSignerFromBytes(identity_, signature_),
+            owner_ == vc.recoverSignerFromBytes(credential.credentialSubject, signature_),
             "signer not match"
         );
 
