@@ -101,30 +101,23 @@ Ejemplo de claim (Credencial Universitaria)
 
   
 
-```json
+```js
 
 // sample claim
 
-struct University {
+ // sample claim
+    struct University {
+        string value; // university name
+        string[] subjects; // subjects of student in university
+    }
 
-string  value;  // university name
-
-string[]  subjects;  // subjects of student in university
-
-}
-
-  
-
-// Credential subject - can be named differently
-
-struct AlumniOf {
-
-string  id;
-
-University[]  universities;
-
-}
-
+    // Credential subject - can be named differently
+    struct AlumniOf {
+        string id; // identifier about the only subject of the credential
+        // assertion about the only subject of the credential
+        // TODO - Define credential structure
+        University[] universities;
+    }
 ```
 
   
@@ -134,189 +127,110 @@ Cada emisor quiere usar su propia estructura de datos, y permitir que esta sea v
   
 
 ```js
-
-function  serializeAlumniOf(AlumniOf  memory  alumn)
-
-public
-
-pure
-
-returns (bytes  memory) {
-
-bytes memory idBytes = ZeroCopySink.WriteVarBytes(bytes(alumn.id));
-
-// serialize list of universities
-
-bytes memory universitiesLenBytes = ZeroCopySink.WriteUint255( alumn.universities.length);
-
-  
-
-bytes memory universitiesBytes =  new  bytes(0);
-
-for (uint256 i =  0; i < alumn.universities.length; i++) {
-
-bytes memory valueBytes;
-
-bytes memory subjectsLenBytes;
-
-bytes memory subjectsBytes;
-
-(valueBytes, subjectsLenBytes, subjectsBytes) =  serializeUniversity(alumn.universities[i]);
-
-bytes memory result = abi.encodePacked(valueBytes, subjectsLenBytes, subjectsBytes);
-
-universitiesBytes = abi.encodePacked(universitiesBytes, result);
-
-}
-
-  
-
-return abi.encodePacked(idBytes, universitiesLenBytes, universitiesBytes);
-
-}
-
-  
-
-function  deserializeAlumniOf(bytes  memory  data)
-
-public
-
-pure
-
-returns (AlumniOf  memory)
-
-{
-
-(bytes memory idData, uint256 offset) = ZeroCopySource.NextVarBytes(
-
-data,
-
-0
-
-);
-
-  
-
-uint256 universitiesLen;
-
-(universitiesLen, offset) = ZeroCopySource.NextUint255(data, offset);
-
-University[] memory universities =  new University[](universitiesLen);
-
-  
-
-for (uint256 i =  0; i < universitiesLen; i++) {
-
-University memory university;
-
-(university, offset) =  deserializeUniversity(data, offset);
-
-universities[i] = university;
-
-}
-
-  
-
-return  AlumniOf(string(idData), universities);
-
-}
-
-  
-
-function  serializeUniversity(University  memory  university)
-
-private
-
-pure
-
-returns (
-
-bytes  memory,
-
-bytes  memory,
-
-bytes  memory
-
-)
-
-{
-
-bytes memory valueBytes = ZeroCopySink.WriteVarBytes(
-
-bytes(university.value)
-
-);
-
-// serialize list string
-
-bytes memory subjectsLenBytes = ZeroCopySink.WriteUint255(
-
-university.subjects.length
-
-);
-
-bytes memory subjectsBytes =  new  bytes(0);
-
-for (uint256 i =  0; i < university.subjects.length; i++) {
-
-subjectsBytes = abi.encodePacked(
-
-subjectsBytes,
-
-ZeroCopySink.WriteVarBytes(bytes(university.subjects[i]))
-
-);
-
-}
-
-  
-
-return (valueBytes, subjectsLenBytes, subjectsBytes);
-
-}
-
-  
-
-function  deserializeUniversity(bytes  memory  data,  uint256  offset)
-
-private
-
-pure
-
-returns (University  memory,  uint256)
-
-{
-
-bytes memory value;
-
-(value, offset) = ZeroCopySource.NextVarBytes(data, offset);
-
-  
-
-uint256 subjectsLen;
-
-(subjectsLen, offset) = ZeroCopySource.NextUint255(data, offset);
-
-string[] memory subjects =  new string[](subjectsLen);
-
-  
-
-for (uint256 i =  0; i < subjectsLen; i++) {
-
-bytes memory ctrl;
-
-(ctrl, offset) = ZeroCopySource.NextVarBytes(data, offset);
-
-subjects[i] =  string(ctrl);
-
-}
-
-  
-
-return (University(string(value), subjects), offset);
-
-}
-
+function serializeAlumniOf(AlumniOf memory alumn)
+        public
+        pure
+        returns (bytes memory)
+    {
+        bytes memory idBytes = ZeroCopySink.WriteVarBytes(bytes(alumn.id));
+
+        // serialize list of universities
+        bytes memory universitiesLenBytes = ZeroCopySink.WriteUint255(
+            alumn.universities.length
+        );
+        bytes memory universitiesBytes = new bytes(0);
+        for (uint256 i = 0; i < alumn.universities.length; i++) {
+            bytes memory valueBytes;
+            bytes memory subjectsLenBytes;
+            bytes memory subjectsBytes;
+            (valueBytes, subjectsLenBytes, subjectsBytes) = serializeUniversity(
+                alumn.universities[i]
+            );
+
+            bytes memory result = abi.encodePacked(
+                valueBytes,
+                subjectsLenBytes,
+                subjectsBytes
+            );
+
+            universitiesBytes = abi.encodePacked(universitiesBytes, result);
+        }
+
+        return
+            abi.encodePacked(idBytes, universitiesLenBytes, universitiesBytes);
+    }
+
+    function deserializeAlumniOf(bytes memory data)
+        public
+        pure
+        returns (AlumniOf memory)
+    {
+        (bytes memory idData, uint256 offset) = ZeroCopySource.NextVarBytes(
+            data,
+            0
+        );
+
+        uint256 universitiesLen;
+        (universitiesLen, offset) = ZeroCopySource.NextUint255(data, offset);
+        University[] memory universities = new University[](universitiesLen);
+
+        for (uint256 i = 0; i < universitiesLen; i++) {
+            University memory university;
+            (university, offset) = deserializeUniversity(data, offset);
+            universities[i] = university;
+        }
+
+        return AlumniOf(string(idData), universities);
+    }
+
+    function serializeUniversity(University memory university)
+        private
+        pure
+        returns (
+            bytes memory,
+            bytes memory,
+            bytes memory
+        )
+    {
+        bytes memory valueBytes = ZeroCopySink.WriteVarBytes(
+            bytes(university.value)
+        );
+        // serialize list string
+        bytes memory subjectsLenBytes = ZeroCopySink.WriteUint255(
+            university.subjects.length
+        );
+        bytes memory subjectsBytes = new bytes(0);
+        for (uint256 i = 0; i < university.subjects.length; i++) {
+            subjectsBytes = abi.encodePacked(
+                subjectsBytes,
+                ZeroCopySink.WriteVarBytes(bytes(university.subjects[i]))
+            );
+        }
+
+        return (valueBytes, subjectsLenBytes, subjectsBytes);
+    }
+
+    function deserializeUniversity(bytes memory data, uint256 offset)
+        private
+        pure
+        returns (University memory, uint256)
+    {
+        bytes memory value;
+        (value, offset) = ZeroCopySource.NextVarBytes(data, offset);
+
+        uint256 subjectsLen;
+        (subjectsLen, offset) = ZeroCopySource.NextUint255(data, offset);
+        string[] memory subjects = new string[](subjectsLen);
+
+        for (uint256 i = 0; i < subjectsLen; i++) {
+            bytes memory ctrl;
+            (ctrl, offset) = ZeroCopySource.NextVarBytes(data, offset);
+            subjects[i] = string(ctrl);
+        }
+
+        return (University(string(value), subjects), offset);
+    }
+```
   
 
   
