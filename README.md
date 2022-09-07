@@ -36,9 +36,9 @@ EIP 712
 
 > La firma de datos es un problema resuelto si lo único que nos importa son las cadenas de bytes. Desafortunadamente, en el mundo real nos preocupamos por los mensajes complejos y significativos. Hashing de datos estructurados no es trivial y los errores dan como resultado la pérdida de las propiedades de seguridad del sistema.
 
-Como tal, se aplica el adagio "no hagas tu propia criptografía". En su lugar, se debe utilizar un método estándar bien probado y revisado por pares. Este EIP pretende ser ese estándar.
+> Como tal, se aplica el adagio "no hagas tu propia criptografía". En su lugar, se debe utilizar un método estándar bien probado y revisado por pares. Este EIP pretende ser ese estándar.
 
-Este EIP tiene como objetivo mejorar la usabilidad de la firma de mensajes fuera de la cadena para su uso en la cadena. Estamos viendo una adopción creciente de la firma de mensajes fuera de la cadena, ya que ahorra gasolina y reduce la cantidad de transacciones en la cadena de bloques. Los mensajes actualmente firmados son una cadena hexadecimal opaca que se muestra al usuario con poco contexto sobre los elementos que componen el mensaje.
+> Este EIP tiene como objetivo mejorar la usabilidad de la firma de mensajes fuera de la cadena para su uso en la cadena. Estamos viendo una adopción creciente de la firma de mensajes fuera de la cadena, ya que ahorra gasolina y reduce la cantidad de transacciones en la cadena de bloques. Los mensajes actualmente firmados son una cadena hexadecimal opaca que se muestra al usuario con poco contexto sobre los elementos que componen el mensaje.
 
   
 
@@ -46,17 +46,17 @@ EIP 1812
 
 > Los reclamos verificables fuera de la cadena reutilizables brindan una parte importante de la integración de contratos inteligentes con los requisitos organizacionales del mundo real, como cumplir con los requisitos regulatorios como KYC, GDPR, reglas de inversores acreditados, etc.
 
-ERC-735 y ERC-780 proporcionan métodos para hacer afirmaciones que viven en cadena. Esto es útil para algunos casos de uso particulares, donde alguna afirmación sobre una dirección debe verificarse en cadena.
+> ERC-735 y ERC-780 proporcionan métodos para hacer afirmaciones que viven en cadena. Esto es útil para algunos casos de uso particulares, donde alguna afirmación sobre una dirección debe verificarse en cadena.
 
-Sin embargo, en la mayoría de los casos es peligroso y, en algunos casos, ilegal (según las normas del RGPD de la UE, por ejemplo) registrar reclamos de identidad que contengan información de identificación personal (PII) en una base de datos pública inmutable como la cadena de bloques Ethereum.
+> Sin embargo, en la mayoría de los casos es peligroso y, en algunos casos, ilegal (según las normas del RGPD de la UE, por ejemplo) registrar reclamos de identidad que contengan información de identificación personal (PII) en una base de datos pública inmutable como la cadena de bloques Ethereum.
 
-Las representaciones y el modelo de datos de credenciales verificables de W3C, así como las especificaciones de mensajes de verificación de uPort, son soluciones fuera de la cadena propuestas.
+> Las representaciones y el modelo de datos de credenciales verificables de W3C, así como las especificaciones de mensajes de verificación de uPort, son soluciones fuera de la cadena propuestas.
 
-Si bien se basan en estándares de la industria como JSON-LD y JWT, ninguno de ellos es fácil de integrar con el ecosistema Ethereum.
+> Si bien se basan en estándares de la industria como JSON-LD y JWT, ninguno de ellos es fácil de integrar con el ecosistema Ethereum.
 
-EIP-712 presenta un nuevo método para firmar datos de identidad de cadena. Esto proporciona un formato de datos basado en la codificación Solidity ABI que se puede analizar fácilmente en la cadena y una nueva llamada JSON-RPC que es fácilmente compatible con las billeteras Ethereum existentes y los clientes Web3.
+> EIP-712 presenta un nuevo método para firmar datos de identidad de cadena. Esto proporciona un formato de datos basado en la codificación Solidity ABI que se puede analizar fácilmente en la cadena y una nueva llamada JSON-RPC que es fácilmente compatible con las billeteras Ethereum existentes y los clientes Web3.
 
-Este formato permite que los reclamos verificables reutilizables fuera de la cadena se emitan de manera económica a los usuarios, quienes pueden presentarlos cuando sea necesario.
+> Este formato permite que los reclamos verificables reutilizables fuera de la cadena se emitan de manera económica a los usuarios, quienes pueden presentarlos cuando sea necesario.
 
   
 
