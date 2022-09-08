@@ -454,10 +454,11 @@ contract NebuVC {
     /**
      * @dev Verify credential - action by user
      */
-    function verifyByOwner(
-        uint256 index_,
-        bytes memory signature_
-    ) public view returns (bool) {
+    function verifyByOwner(uint256 index_, bytes memory signature_)
+        public
+        view
+        returns (bool)
+    {
         // get credential by index
         StoreCredential memory store = credentialsUsers_[msg.sender][index_];
         VerifiableCredential memory credential = deserializeCredentialStore(
@@ -505,7 +506,7 @@ contract NebuVC {
         IEIP721 vc = IEIP721(credential.issuer);
 
         // check owner
-         require(msg.sender == owner(vc), "invalid issuer");
+        require(msg.sender == owner(vc), "invalid issuer");
 
         if (
             msg.sender !=

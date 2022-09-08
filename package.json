@@ -2,6 +2,7 @@
   "dependencies": {
     "ethers": "^5.4.7",
     "ethers-eip712": "^0.2.0",
+    "file-metadata": "^3.0.0",
     "ganache-core": "^2.13.2",
     "truffle-contract-size": "^2.0.1",
     "truffle-cost": "^1.0.1"
