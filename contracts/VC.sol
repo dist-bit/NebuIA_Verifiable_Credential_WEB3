@@ -452,9 +452,9 @@ contract NebuVC {
     }*/
 
     /**
-     * @dev Verify credential - emit by user
+     * @dev Verify credential - action by user
      */
-    function verifyVC(
+    function verifyByOwner(
         uint256 index_,
         bytes memory signature_
     ) public view returns (bool) {
@@ -465,7 +465,47 @@ contract NebuVC {
         );
         // init subject contract
         IEIP721 vc = IEIP721(credential.issuer);
+
         // check signature
+        if (
+            msg.sender !=
+            vc.recoverSignerFromBytes(credential.credentialSubject, signature_)
+        ) {
+            return false;
+        }
+
+        if (store.revoke) {
+            return false;
+        }
+
+        if (
+            credential.expirationDate != 0x000000 &&
+            credential.expirationDate < block.timestamp
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @dev Verify credential - emit by issuer
+     */
+    function verifyByIssuer(
+        address owner_,
+        uint256 index_,
+        bytes memory signature_
+    ) public view returns (bool) {
+        // get credential by index
+        StoreCredential memory store = credentialsUsers_[owner_][index_];
+        VerifiableCredential memory credential = deserializeCredentialStore(
+            store.credential
+        );
+        // init subject contract
+        IEIP721 vc = IEIP721(credential.issuer);
+
+        // check owner
+         require(msg.sender == owner(vc), "invalid issuer");
 
         if (
             msg.sender !=
@@ -523,9 +563,6 @@ contract NebuVC {
 
         // check for subject deploy
         require(msg.sender == owner(vc), "subject creator not match");
-
-        // reject duplicate credential with same signature
-        //require(!duplicate(to_, signature_), "duplicate signature found");
 
         // check signature
         require(

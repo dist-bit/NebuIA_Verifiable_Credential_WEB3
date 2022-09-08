@@ -78,14 +78,14 @@ contract('AlumniOf', (accounts) => {
 
     const encode = await _credential.serializeAlumniOf(value);
     console.log(encode);
-    
 
-    let valid = await _vc.verifyVC(
+
+    let valid = await _vc.verifyByOwner(
       0,
       signature,
     );
 
-    assert.equal(valid, true, "invalid credential");
+    assert.equal(valid, true, "invalid credential validation by user");
 
     const revoke = await _vc.revokeVC(
       signer.address,
@@ -96,12 +96,20 @@ contract('AlumniOf', (accounts) => {
     console.log('Gas revoke: ', revoke.receipt.gasUsed);
 
 
-    valid = await _vc.verifyVC(
+    valid = await _vc.verifyByOwner(
       0,
       signature,
     );
 
-    assert.equal(valid, false, "invalid credential");
+    assert.equal(valid, false, "invalid credential validation by user");
+
+    valid = await _vc.verifyByIssuer(
+      signer.address,
+      0,
+      signature,
+    );
+
+    assert.equal(valid, false, "invalid credential validation by issuer");
 
     const domainVC = await _vc.domain(_credential.address);
 
