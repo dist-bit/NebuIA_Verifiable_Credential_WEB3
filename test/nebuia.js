@@ -26,7 +26,7 @@ contract('AlumniOf', (accounts) => {
   it('Test AlumniOf signature', async () => {
     const _credential = await AlumniOfVC.deployed();
     const _vc = await NebuVC.deployed();
-    const signer = new ethers.Wallet('f4951e7e4a65b7c39576eaf474097bc376b5e3c825856dfd26bb9ec6307bc2db'); // deployer
+    const signer = new ethers.Wallet('911b935b8595ffd4b8a122beef95af027d4a6668eb471ed4231c79179cb5a3eb'); // deployer
 
     // sha512 checksum from ip files
     const subjects = [
@@ -50,8 +50,8 @@ contract('AlumniOf', (accounts) => {
 
     const signature = await signer._signTypedData(domain, types, value);
 
-    const encode = await _credential.serializeAlumniOf(value);
-    const decode = await _credential.deserializeAlumniOf(encode);
+    //const encode = await _credential.serializeAlumniOf(value);
+    //const decode = await _credential.deserializeAlumniOf(encode);
 
     //assert.equal(decode.universities, value.universities, "invalid encode/decode");
     // (v, r, s) = digest = signature
@@ -67,18 +67,20 @@ contract('AlumniOf', (accounts) => {
       signer.address,
       bytesEIP,
       signature,
-      1662503835, // expiration
+      000000, //1662648965, // expiration 000000 for not expiration
     );
 
     console.log('Gas create VC: ', tx.receipt.gasUsed);
 
     const credentials = await _vc.getVCFromUser();
-    //console.log(credentials);
 
     assert.equal(credentials.length, 1, "credential not saved");
 
+    const encode = await _credential.serializeAlumniOf(value);
+    console.log(encode);
+    
+
     let valid = await _vc.verifyVC(
-      signer.address,
       0,
       signature,
     );
@@ -93,8 +95,8 @@ contract('AlumniOf', (accounts) => {
 
     console.log('Gas revoke: ', revoke.receipt.gasUsed);
 
+
     valid = await _vc.verifyVC(
-      signer.address,
       0,
       signature,
     );

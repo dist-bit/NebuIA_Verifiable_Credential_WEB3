@@ -425,7 +425,7 @@ contract NebuVC {
             v,
             r,
             s,
-            block.timestamp //creates
+            block.timestamp //created
         );
 
         return proof;
@@ -452,15 +452,14 @@ contract NebuVC {
     }*/
 
     /**
-     * @dev Verify credential by signature and claim
+     * @dev Verify credential - emit by user
      */
     function verifyVC(
-        address owner_,
         uint256 index_,
         bytes memory signature_
     ) public view returns (bool) {
         // get credential by index
-        StoreCredential memory store = credentialsUsers_[owner_][index_];
+        StoreCredential memory store = credentialsUsers_[msg.sender][index_];
         VerifiableCredential memory credential = deserializeCredentialStore(
             store.credential
         );
@@ -469,13 +468,20 @@ contract NebuVC {
         // check signature
 
         if (
-            owner_ !=
+            msg.sender !=
             vc.recoverSignerFromBytes(credential.credentialSubject, signature_)
         ) {
             return false;
         }
 
         if (store.revoke) {
+            return false;
+        }
+
+        if (
+            credential.expirationDate != 0x000000 &&
+            credential.expirationDate < block.timestamp
+        ) {
             return false;
         }
 
