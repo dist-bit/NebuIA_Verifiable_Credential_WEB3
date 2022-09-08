@@ -44,16 +44,11 @@ contract('AlumniOf', (accounts) => {
       ],
     };
 
-    // serialized value
-    const bytesEIP = '0x0969645f73616d706c650100000000000000000000000000000000000000000000000000000000000000045541454d0200000000000000000000000000000000000000000000000000000000000000077370616e69736807656e676c697368';
-
-
     const signature = await signer._signTypedData(domain, types, value);
 
-    //const encode = await _credential.serializeAlumniOf(value);
+    const encode = await _credential.serializeAlumniOf(value);
     //const decode = await _credential.deserializeAlumniOf(encode);
 
-    //assert.equal(decode.universities, value.universities, "invalid encode/decode");
     // (v, r, s) = digest = signature
 
     let owner = await _credential.recoverSigner(
@@ -65,7 +60,7 @@ contract('AlumniOf', (accounts) => {
     const tx = await _vc.createVC(
       _credential.address,
       signer.address,
-      bytesEIP,
+      encode,
       signature,
       000000, //1662648965, // expiration 000000 for not expiration
     );
@@ -75,10 +70,6 @@ contract('AlumniOf', (accounts) => {
     const credentials = await _vc.getVCFromUser();
 
     assert.equal(credentials.length, 1, "credential not saved");
-
-    const encode = await _credential.serializeAlumniOf(value);
-    console.log(encode);
-
 
     let valid = await _vc.verifyByOwner(
       0,
