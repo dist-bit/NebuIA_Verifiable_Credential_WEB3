@@ -71,7 +71,6 @@ contract NebuVC {
         string[] context;
         string[] typeCredential;
         Proof proof;
-        bool revoke;
         address issuer; // contract subject address
         bytes signature;
         bytes credentialSubject; // store credential as bytes
@@ -83,6 +82,7 @@ contract NebuVC {
     struct StoreCredential {
         uint256 index;
         bytes credential;
+        bool revoke;
     }
 
     function serializeStringArray(string[] memory _array)
@@ -312,8 +312,6 @@ contract NebuVC {
 
         bytes memory proofBytes = serializeProof(_credential.proof);
 
-        bytes memory revoke = ZeroCopySink.WriteBool(_credential.revoke);
-
         bytes memory issuerBytes = ZeroCopySink.WriteVarBytes(
             abi.encodePacked(_credential.issuer)
         );
@@ -343,7 +341,6 @@ contract NebuVC {
                 typeCredentialLenBytes,
                 typeCredentialBytes,
                 proofBytes,
-                revoke,
                 issuerBytes,
                 signatureBytes,
                 credentialSubject,
@@ -367,9 +364,6 @@ contract NebuVC {
 
         Proof memory proof;
         (proof, offset) = deserializeProof(_data, offset);
-
-        bool revoke;
-        (revoke, offset) = ZeroCopySource.NextBool(_data, offset);
 
         bytes memory source = new bytes(0);
         (source, offset) = ZeroCopySource.NextVarBytes(_data, offset);
@@ -401,7 +395,6 @@ contract NebuVC {
             contextCredential,
             typeCredential,
             proof,
-            revoke,
             issuer,
             signature,
             credentialSubject,
@@ -482,7 +475,7 @@ contract NebuVC {
             return false;
         }
 
-        if (credential.revoke) {
+        if (store.revoke) {
             return false;
         }
 
@@ -492,25 +485,21 @@ contract NebuVC {
     /**
      * @dev Revoe credential - only credential owner can revoke
      */
-    function revokeVC(address owner_, uint256 index_) public {
+    function revokeVC(
+        address owner_,
+        address issuer_,
+        uint256 index_
+    ) public {
         // get credential by index
         StoreCredential memory store = credentialsUsers_[owner_][index_];
-        VerifiableCredential memory credential = deserializeCredentialStore(
-            store.credential
-        );
         // init subject contract
-        IEIP721 vc = IEIP721(credential.issuer);
+        IEIP721 vc = IEIP721(issuer_);
 
-        require(!credential.revoke, "credential already revoked");
+        require(!store.revoke, "credential already revoked");
 
         require(msg.sender == owner(vc), "invalid issuer");
 
-        credential.revoke = true;
-
-        credentialsUsers_[owner_][index_] = StoreCredential(
-            index_,
-            serializeCredentialStore(credential)
-        );
+        credentialsUsers_[owner_][index_].revoke = true;
     }
 
     /**
@@ -544,7 +533,6 @@ contract NebuVC {
             context(vc),
             types(vc),
             proof,
-            false,
             service_, // contract subject
             signature_, // signature,
             identity_, //credentialSubject
@@ -557,7 +545,7 @@ contract NebuVC {
         //StoreCredential memory _t = deserializeCredentialStore(encode);
         uint256 index = credentialsUsers_[to_].length;
 
-        StoreCredential memory store = StoreCredential(index, encode);
+        StoreCredential memory store = StoreCredential(index, encode, false);
 
         credentialsUsers_[to_].push(store);
     }

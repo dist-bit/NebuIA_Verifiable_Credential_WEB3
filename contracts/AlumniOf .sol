@@ -469,16 +469,7 @@ contract EIP712 is IEIP721, IEIP721Metadata {
 
         (v, r, s) = splitSignature(_signature);
 
-        //bytes memory serialize = serializeAlumniOf(_alumniOf);
-        //AlumniOf memory alumniOf = deserializeAlumniOf(serialize);
-
-        // bytes memory serialize = serializeIdentity(_identity);
-        //NebuIA_Identity memory identity = deserializeIdentity(serialize);
-
-        //require(verify(identity, v, r, s) == msg.sender, "invalid signature");
-
         return verify(_alumniOf, v, r, s);
-        //return alumniOf;
     }
 
     function serializeAlumniOf(AlumniOf memory alumn)

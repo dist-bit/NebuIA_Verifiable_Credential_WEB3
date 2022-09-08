@@ -87,6 +87,7 @@ contract('AlumniOf', (accounts) => {
 
     const revoke = await _vc.revokeVC(
       signer.address,
+      _credential.address,
       0,
     );
 
