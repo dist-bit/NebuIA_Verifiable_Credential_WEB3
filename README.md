@@ -1,7 +1,9 @@
 ## Verifiable Credentials - w3c
 
   
-![NebuIA DID By @MarianaSoza](https://usdid.site/img/banner/1.png)
+# nebuia
+
+[![N|Nebula](https://i.ibb.co/DC46xJv/banner-min.png)](https://nebuia.com)
 
 Bibliografias
 
