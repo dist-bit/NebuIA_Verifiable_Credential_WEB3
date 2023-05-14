@@ -73,7 +73,7 @@ contract NebuVC {
         Proof proof;
         address issuer; // contract subject address
         bytes signature;
-        bytes credentialSubject; // store credential as bytes
+        //bytes credentialSubject; // store credential as bytes
         uint256 issuanceDate;
         uint256 expirationDate;
         IEIP721.Schema credentialSchema;
@@ -85,7 +85,9 @@ contract NebuVC {
         bool revoke;
     }
 
-    function serializeStringArray(string[] memory _array)
+    function serializeStringArray(
+        string[] memory _array
+    )
         internal
         pure
         returns (bytes memory contentsLenBytes, bytes memory contentsBytes)
@@ -100,11 +102,10 @@ contract NebuVC {
         }
     }
 
-    function derializeStringArray(bytes memory _data, uint256 _offset)
-        internal
-        pure
-        returns (string[] memory, uint256)
-    {
+    function derializeStringArray(
+        bytes memory _data,
+        uint256 _offset
+    ) internal pure returns (string[] memory, uint256) {
         uint256 contentsLen;
         (contentsLen, _offset) = ZeroCopySource.NextUint255(_data, _offset);
         string[] memory contents = new string[](contentsLen);
@@ -118,11 +119,9 @@ contract NebuVC {
         return (contents, _offset);
     }
 
-    function serializeSchema(IEIP721.Schema memory _schema)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function serializeSchema(
+        IEIP721.Schema memory _schema
+    ) internal pure returns (bytes memory) {
         bytes memory idBytes = ZeroCopySink.WriteVarBytes(bytes(_schema.id));
 
         bytes memory typeSchemaBytes = ZeroCopySink.WriteVarBytes(
@@ -132,11 +131,10 @@ contract NebuVC {
         return abi.encodePacked(idBytes, typeSchemaBytes);
     }
 
-    function deserializeSchema(bytes memory _data, uint256 _offset)
-        internal
-        pure
-        returns (IEIP721.Schema memory, uint256)
-    {
+    function deserializeSchema(
+        bytes memory _data,
+        uint256 _offset
+    ) internal pure returns (IEIP721.Schema memory, uint256) {
         bytes memory id;
         (id, _offset) = ZeroCopySource.NextVarBytes(_data, _offset);
 
@@ -146,11 +144,9 @@ contract NebuVC {
         return (IEIP721.Schema(string(id), string(typeSchema)), _offset);
     }
 
-    function serializeDomain(IEIP721.EIP712Domain memory _domain)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function serializeDomain(
+        IEIP721.EIP712Domain memory _domain
+    ) internal pure returns (bytes memory) {
         bytes memory nameBytes = ZeroCopySink.WriteVarBytes(
             bytes(_domain.name)
         );
@@ -172,11 +168,10 @@ contract NebuVC {
             );
     }
 
-    function deserializeDomain(bytes memory _data, uint256 _offset)
-        internal
-        pure
-        returns (IEIP721.EIP712Domain memory, uint256)
-    {
+    function deserializeDomain(
+        bytes memory _data,
+        uint256 _offset
+    ) internal pure returns (IEIP721.EIP712Domain memory, uint256) {
         bytes memory name;
         (name, _offset) = ZeroCopySource.NextVarBytes(_data, _offset);
 
@@ -200,11 +195,9 @@ contract NebuVC {
         );
     }
 
-    function serializeProof(Proof memory _proof)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function serializeProof(
+        Proof memory _proof
+    ) internal pure returns (bytes memory) {
         bytes memory typeSignatureBytes = ZeroCopySink.WriteVarBytes(
             bytes(_proof.typeSignature)
         );
@@ -241,11 +234,10 @@ contract NebuVC {
             );
     }
 
-    function deserializeProof(bytes memory _data, uint256 _offset)
-        internal
-        pure
-        returns (Proof memory, uint256)
-    {
+    function deserializeProof(
+        bytes memory _data,
+        uint256 _offset
+    ) internal pure returns (Proof memory, uint256) {
         bytes memory typeSignature;
         (typeSignature, _offset) = ZeroCopySource.NextVarBytes(_data, _offset);
 
@@ -295,11 +287,9 @@ contract NebuVC {
         return (proof, _offset);
     }
 
-    function serializeCredentialStore(VerifiableCredential memory _credential)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function serializeCredentialStore(
+        VerifiableCredential memory _credential
+    ) internal pure returns (bytes memory) {
         (
             bytes memory contextLenBytes,
             bytes memory contextBytes
@@ -319,9 +309,9 @@ contract NebuVC {
         bytes memory signatureBytes = ZeroCopySink.WriteVarBytes(
             _credential.signature
         );
-        bytes memory credentialSubject = ZeroCopySink.WriteVarBytes(
+        /*bytes memory credentialSubject = ZeroCopySink.WriteVarBytes(
             _credential.credentialSubject
-        );
+        ); */
 
         bytes memory issuanceDateBytes = ZeroCopySink.WriteUint255(
             _credential.issuanceDate
@@ -343,18 +333,16 @@ contract NebuVC {
                 proofBytes,
                 issuerBytes,
                 signatureBytes,
-                credentialSubject,
+                //credentialSubject,
                 issuanceDateBytes,
                 expirationDateBytes,
                 schemaBytes
             );
     }
 
-    function deserializeCredentialStore(bytes memory _data)
-        internal
-        pure
-        returns (VerifiableCredential memory _credential)
-    {
+    function deserializeCredentialStore(
+        bytes memory _data
+    ) internal pure returns (VerifiableCredential memory _credential) {
         string[] memory contextCredential;
         uint256 offset;
         (contextCredential, offset) = derializeStringArray(_data, 0);
@@ -376,11 +364,11 @@ contract NebuVC {
         bytes memory signature;
         (signature, offset) = ZeroCopySource.NextVarBytes(_data, offset);
 
-        bytes memory credentialSubject;
+        /*bytes memory credentialSubject;
         (credentialSubject, offset) = ZeroCopySource.NextVarBytes(
             _data,
             offset
-        );
+        );*/
 
         uint256 issuanceDate;
         (issuanceDate, offset) = ZeroCopySource.NextUint255(_data, offset);
@@ -397,7 +385,7 @@ contract NebuVC {
             proof,
             issuer,
             signature,
-            credentialSubject,
+            //credentialSubject,
             issuanceDate,
             expirationDate,
             credentialSchema
@@ -407,11 +395,10 @@ contract NebuVC {
     /**
      * @dev Create proof object - https://www.w3.org/TR/vc-data-model/#proofs-signatures
      */
-    function createProof(IEIP721 vc, bytes memory _signature)
-        internal
-        view
-        returns (Proof memory)
-    {
+    function createProof(
+        IEIP721 vc,
+        bytes memory _signature
+    ) internal view returns (Proof memory) {
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -454,11 +441,11 @@ contract NebuVC {
     /**
      * @dev Verify credential - action by user
      */
-    function verifyByOwner(uint256 index_, bytes memory signature_)
-        public
-        view
-        returns (bool)
-    {
+    function verifyByOwner(
+        uint256 index_,
+        //bytes memory signature_,
+        bytes memory identity_
+    ) public view returns (bool) {
         // get credential by index
         StoreCredential memory store = credentialsUsers_[msg.sender][index_];
         VerifiableCredential memory credential = deserializeCredentialStore(
@@ -468,10 +455,7 @@ contract NebuVC {
         IEIP721 vc = IEIP721(credential.issuer);
 
         // check signature
-        if (
-            msg.sender !=
-            vc.recoverSignerFromBytes(credential.credentialSubject, signature_)
-        ) {
+        if (msg.sender != vc.recoverSignerFromBytes(identity_, credential.signature)) {
             return false;
         }
 
@@ -495,7 +479,8 @@ contract NebuVC {
     function verifyByIssuer(
         address owner_,
         uint256 index_,
-        bytes memory signature_
+        //bytes memory signature_,
+        bytes memory identity_
     ) public view returns (bool) {
         // get credential by index
         StoreCredential memory store = credentialsUsers_[owner_][index_];
@@ -510,7 +495,7 @@ contract NebuVC {
 
         if (
             msg.sender !=
-            vc.recoverSignerFromBytes(credential.credentialSubject, signature_)
+            vc.recoverSignerFromBytes(identity_, credential.signature)
         ) {
             return false;
         }
@@ -532,11 +517,7 @@ contract NebuVC {
     /**
      * @dev Revoe credential - only credential owner can revoke
      */
-    function revokeVC(
-        address owner_,
-        address issuer_,
-        uint256 index_
-    ) public {
+    function revokeVC(address owner_, address issuer_, uint256 index_) public {
         // get credential by index
         StoreCredential memory store = credentialsUsers_[owner_][index_];
         // init subject contract
@@ -579,7 +560,7 @@ contract NebuVC {
             proof,
             service_, // contract subject
             signature_, // signature,
-            identity_, //credentialSubject
+            //identity_, //credentialSubject
             block.timestamp, //issuanceDate,
             expiration_, // expiration
             schema(vc)
@@ -620,19 +601,15 @@ contract NebuVC {
     /**
      * @dev Get contract subject domain - replay attacks
      */
-    function domain(IEIP721 vc_)
-        public
-        view
-        returns (IEIP721.EIP712Domain memory)
-    {
+    function domain(
+        IEIP721 vc_
+    ) public view returns (IEIP721.EIP712Domain memory) {
         return vc_.domain();
     }
 
-    function verificationMethod(IEIP721 vc_)
-        public
-        view
-        returns (string memory)
-    {
+    function verificationMethod(
+        IEIP721 vc_
+    ) public view returns (string memory) {
         return vc_.verificationMethod();
     }
 
@@ -664,15 +641,9 @@ contract NebuVC {
     /**
      * @dev Return r, s, v => digest
      */
-    function splitSignature(bytes memory sig_)
-        internal
-        pure
-        returns (
-            uint8,
-            bytes32,
-            bytes32
-        )
-    {
+    function splitSignature(
+        bytes memory sig_
+    ) internal pure returns (uint8, bytes32, bytes32) {
         require(sig_.length == 65);
 
         bytes32 r;

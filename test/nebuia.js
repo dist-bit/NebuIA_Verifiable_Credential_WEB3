@@ -1,10 +1,138 @@
 const AlumniOfVC = artifacts.require("AlumniOfVC");
+const NebuIAVC = artifacts.require("NebuIAVC");
 const DocumentMultiSign = artifacts.require("DocumentMultiSign");
 const NebuVC = artifacts.require('NebuVC');
-const { ethers } = require("ethers");
+const { ethers, utils } = require("ethers");
+const { toUtf8Bytes } = require("ethers/lib/utils");
 
 //truffle test --show-events
+const VeriableItemNamed = 'VeriableItemNamed';
+contract('NebuIAVC', (accounts) => {
+  const domain = {
+    name: 'NebuIADID',
+    version: '1',
+    chainId: 1,
+    verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC'
+  };
 
+  const types = {
+    VeriableItemNamed: [
+      { name: 'value_', type: 'string' },
+      { name: 'valid_', type: 'uint8' },
+    ],
+    IdOf: [
+      { name: 'id_', type: 'string' },
+      { name: 'email_', type: VeriableItemNamed },
+      { name: 'address_', type: VeriableItemNamed },
+      { name: 'phone_', type: VeriableItemNamed },
+      { name: 'document_', type: VeriableItemNamed },
+      { name: 'face_', type: VeriableItemNamed },
+    ]
+  };
+
+  it('Test IdOf signature', async () => {
+    const _credential = await NebuIAVC.deployed();
+
+    const _vc = await NebuVC.deployed();
+    const signer = new ethers.Wallet('0x7eb5a5f20dea02668d085272196bb2530d1ae65f8cca57708cf01fc539205d26'); // deployer
+
+    const value = {
+      id_: 'id_sample',
+      email_: {
+        value_: 'miguel@distbit.io',
+        valid_: 1,
+      },
+      address_: {
+        value_: 'Chimalhuacan Edo Mex',
+        valid_: 1,
+      },
+      phone_: {
+        value_: '8129099148',
+        valid_: 1,
+      },
+      document_: {
+        value_: '32432423',
+        valid_: 1,
+      },
+      face_: {
+        value_: 'match and spoofing',
+        valid_: 1,
+      },
+    };
+
+    console.log(await _credential.viewVersion());
+
+    const signature = await signer._signTypedData(domain, types, value);
+    const encode = await _credential.serializeIdOf(value);
+    //const decode = await _credential.deserializeIdOf(encode);
+
+    //console.log(encode);
+    // console.log(await _credential.recoverSignerFromBytes(encode, signature));
+
+    let owner = await _credential.recoverSigner(
+      value,
+      signature);
+
+    assert.equal(owner, signer.address, "invalid signature");
+
+    const tx = await _vc.createVC(
+      _credential.address,
+      signer.address,
+      encode,
+      signature,
+      000000, //1662648965, // expiration 000000 for not expiration
+    );
+
+    console.log('Gas create VC: ', tx.receipt.gasUsed);
+
+    const credentials = await _vc.getVCFromUser();
+    assert.equal(credentials.length, 1, "credential not saved");
+
+    let valid = await _vc.verifyByOwner(
+      0,
+      encode, // body as bytes
+    );
+
+    assert.equal(valid, true, "invalid credential validation by user");
+
+    const revoke = await _vc.revokeVC(
+      signer.address,
+      _credential.address,
+      0,
+    );
+
+    console.log('Gas revoke: ', revoke.receipt.gasUsed);
+
+
+    valid = await _vc.verifyByOwner(
+      0,
+      encode,
+    );
+
+    assert.equal(valid, false, "invalid credential validation by user");
+
+    valid = await _vc.verifyByIssuer(
+      signer.address,
+      0,
+      encode,
+    );
+
+    assert.equal(valid, false, "invalid credential validation by issuer");
+
+    const domainVC = await _vc.domain(_credential.address);
+
+    assert.equal(domainVC.name, domain.name, "invalid domain name");
+    assert.equal(domainVC.version, domain.version, "invalid domain version");
+    assert.equal(domainVC.chainId, domain.chainId, "invalid domain chainId");
+
+
+    const onwerVC = await _vc.owner(_credential.address);
+    assert.equal(onwerVC, signer.address, "invalid domain name");
+  });
+
+}
+)
+/*
 contract('AlumniOf', (accounts) => {
   const domain = {
     name: 'AlumniOf Verifiable Credential',
@@ -27,7 +155,7 @@ contract('AlumniOf', (accounts) => {
   it('Test AlumniOf signature', async () => {
     const _credential = await AlumniOfVC.deployed();
     const _vc = await NebuVC.deployed();
-    const signer = new ethers.Wallet('911b935b8595ffd4b8a122beef95af027d4a6668eb471ed4231c79179cb5a3eb'); // deployer
+    const signer = new ethers.Wallet('0x18efd23c4d4de43791353abca8d20533d26ae91823f34317119fc768c95398b7'); // deployer
 
     // sha512 checksum from ip files
     const subjects = [
@@ -114,7 +242,8 @@ contract('AlumniOf', (accounts) => {
     assert.equal(onwerVC, signer.address, "invalid domain name");
   });
 });
-
+*/
+/*
 contract('DocumentMultiSign', (accounts) => {
   const fs = require('fs');
   const documentPDF = fs.readFileSync('./cyberpunk.pdf');
@@ -205,3 +334,5 @@ contract('DocumentMultiSign', (accounts) => {
     assert.equal(hashOwner2, userToSign2.address, "invalid signature 2");
   });
 });
+
+*/
