@@ -309,6 +309,7 @@ contract NebuVC {
         bytes memory signatureBytes = ZeroCopySink.WriteVarBytes(
             _credential.signature
         );
+
         /*bytes memory credentialSubject = ZeroCopySink.WriteVarBytes(
             _credential.credentialSubject
         ); */
@@ -438,27 +439,7 @@ contract NebuVC {
         return false;
     }*/
 
-    /**
-     * @dev Verify credential - action by user
-     */
-    function verifyByOwner(
-        uint256 index_,
-        //bytes memory signature_,
-        bytes memory identity_
-    ) public view returns (bool) {
-        // get credential by index
-        StoreCredential memory store = credentialsUsers_[msg.sender][index_];
-        VerifiableCredential memory credential = deserializeCredentialStore(
-            store.credential
-        );
-        // init subject contract
-        IEIP721 vc = IEIP721(credential.issuer);
-
-        // check signature
-        if (msg.sender != vc.recoverSignerFromBytes(identity_, credential.signature)) {
-            return false;
-        }
-
+    function verify(StoreCredential memory store, VerifiableCredential memory credential) internal view returns (bool) {
         if (store.revoke) {
             return false;
         }
@@ -474,12 +455,47 @@ contract NebuVC {
     }
 
     /**
+     * @dev Verify credential - action by user
+     */
+    function verifyByOwner(
+        uint256 index_
+    ) public view returns (bool) {
+        // get credential by index
+        StoreCredential memory store = credentialsUsers_[msg.sender][index_];
+        VerifiableCredential memory credential = deserializeCredentialStore(
+            store.credential
+        );
+
+        return verify(store, credential);
+    }
+
+    /**
      * @dev Verify credential - emit by issuer
      */
     function verifyByIssuer(
         address owner_,
+        uint256 index_
+    ) public view returns (bool) {
+        // get credential by index
+        StoreCredential memory store = credentialsUsers_[owner_][index_];
+        VerifiableCredential memory credential = deserializeCredentialStore(
+            store.credential
+        );
+        // init subject contract
+        IEIP721 vc = IEIP721(credential.issuer);
+
+        // check owner
+        require(msg.sender == owner(vc), "invalid issuer");
+
+        return verify(store, credential);
+    }
+
+    /**
+     * @dev Verify credential - emit by issuer
+     */
+    function verifyComplete(
+        address owner_,
         uint256 index_,
-        //bytes memory signature_,
         bytes memory identity_
     ) public view returns (bool) {
         // get credential by index
@@ -493,25 +509,14 @@ contract NebuVC {
         // check owner
         require(msg.sender == owner(vc), "invalid issuer");
 
-        if (
+       if (
             msg.sender !=
             vc.recoverSignerFromBytes(identity_, credential.signature)
         ) {
             return false;
         }
 
-        if (store.revoke) {
-            return false;
-        }
-
-        if (
-            credential.expirationDate != 0x000000 &&
-            credential.expirationDate < block.timestamp
-        ) {
-            return false;
-        }
-
-        return true;
+        return verify(store, credential);
     }
 
     /**
@@ -524,9 +529,7 @@ contract NebuVC {
         IEIP721 vc = IEIP721(issuer_);
 
         require(!store.revoke, "credential already revoked");
-
         require(msg.sender == owner(vc), "invalid issuer");
-
         credentialsUsers_[owner_][index_].revoke = true;
     }
 

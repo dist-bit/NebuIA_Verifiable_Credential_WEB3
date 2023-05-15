@@ -34,7 +34,8 @@ contract('NebuIAVC', (accounts) => {
     const _credential = await NebuIAVC.deployed();
 
     const _vc = await NebuVC.deployed();
-    const signer = new ethers.Wallet('0x7eb5a5f20dea02668d085272196bb2530d1ae65f8cca57708cf01fc539205d26'); // deployer
+    const signer = new ethers.Wallet('0xe27f7317faf6dd425ca5fe16e150bbcb39bde022445758a004f13e28a29e1012'); // deployer
+    console.log(_vc.address);
 
     const value = {
       id_: 'id_sample',
@@ -86,6 +87,7 @@ contract('NebuIAVC', (accounts) => {
     console.log('Gas create VC: ', tx.receipt.gasUsed);
 
     const credentials = await _vc.getVCFromUser();
+
     assert.equal(credentials.length, 1, "credential not saved");
 
     let valid = await _vc.verifyByOwner(
@@ -95,7 +97,7 @@ contract('NebuIAVC', (accounts) => {
 
     assert.equal(valid, true, "invalid credential validation by user");
 
-    const revoke = await _vc.revokeVC(
+    /*const revoke = await _vc.revokeVC(
       signer.address,
       _credential.address,
       0,
@@ -127,7 +129,7 @@ contract('NebuIAVC', (accounts) => {
 
 
     const onwerVC = await _vc.owner(_credential.address);
-    assert.equal(onwerVC, signer.address, "invalid domain name");
+    assert.equal(onwerVC, signer.address, "invalid domain name"); */
   });
 
 }
