@@ -493,7 +493,7 @@ contract NebuVC {
     /**
      * @dev Verify credential - emit by issuer
      */
-    function verifyComplete(
+    function complexVerification(
         address owner_,
         uint256 index_,
         bytes memory identity_

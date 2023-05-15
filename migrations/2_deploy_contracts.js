@@ -1,6 +1,7 @@
 const AlumniOfVC = artifacts.require("AlumniOfVC");
 const DocumentMultiSign = artifacts.require("DocumentMultiSign");
 const NebuIA = artifacts.require("NebuIAVC");
+const Store = artifacts.require("Store");
 const ZeroCopySink = artifacts.require("ZeroCopySink");
 const ZeroCopySource = artifacts.require("ZeroCopySource");
 
@@ -11,6 +12,7 @@ module.exports = async function (deployer, network, accounts) {
   //deployer.link(ConvertLib, MetaCoin);
 
   await deployer.deploy(ZeroCopySink);
+  await deployer.deploy(Store);
   await deployer.deploy(ZeroCopySource);
 
   await deployer.link(ZeroCopySource, AlumniOfVC);
@@ -89,4 +91,5 @@ module.exports = async function (deployer, network, accounts) {
   );
 
   await deployer.deploy(NebuVC);
+  await deployer.deploy(Store);
 };
