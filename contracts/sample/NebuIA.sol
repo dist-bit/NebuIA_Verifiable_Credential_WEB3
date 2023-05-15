@@ -29,6 +29,9 @@ contract _NebuIADID is IEIP721, IEIP721Metadata {
 
     EIP712Domain private _domain;
 
+    // Credential logo
+    string private _logo;
+
     struct VeriableItemNamed {
         string value_;
         uint8 valid_;
@@ -75,7 +78,8 @@ contract _NebuIADID is IEIP721, IEIP721Metadata {
         address verifyingContract_,
         string memory name_,
         string memory version_,
-        uint256 chain_
+        uint256 chain_,
+        string memory logo_
     ) {
         _issuer = issuer_;
         _context = context_;
@@ -83,6 +87,7 @@ contract _NebuIADID is IEIP721, IEIP721Metadata {
         _type = type_;
         _verificationMethod = verificationMethod_;
         _schema = schema_;
+        _logo = logo_;
 
         _domain = EIP712Domain({
             name: name_,
@@ -156,6 +161,13 @@ contract _NebuIADID is IEIP721, IEIP721Metadata {
         returns (string[] memory)
     {
         return _type;
+    }
+
+    /**
+     * @dev optional logo.
+     */
+    function logo() public view virtual returns (string memory) {
+        return _logo;
     }
 
     function hash(
@@ -364,7 +376,8 @@ contract NebuIAVC is _NebuIADID, Ownable {
         string memory id_,
         string[] memory type_,
         string memory verificationMethod_,
-        Schema memory schema_
+        Schema memory schema_,
+        string memory logo_
     )
         _NebuIADID(
             issuer_,
@@ -377,7 +390,8 @@ contract NebuIAVC is _NebuIADID, Ownable {
             0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC, // contract verifier
             "NebuIADID", // name credential
             "1", // version
-            1 // chain id
+            1, // chain id
+            logo_
         )
     {}
 

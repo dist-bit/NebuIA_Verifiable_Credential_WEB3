@@ -11,13 +11,13 @@ contract _Store {
 
     struct Hash {
         uint256 index;
-        bytes hash;
+        string hash;
     }
 
     /**
      * @dev register new hash
      */
-    function createHash(bytes memory _signature, address _to, uint256 _index) public {
+    function createHash(string memory _signature, address _to, uint256 _index) public {
         Hash memory store = Hash(_index, _signature);
         stores_[_to].push(store);
     }

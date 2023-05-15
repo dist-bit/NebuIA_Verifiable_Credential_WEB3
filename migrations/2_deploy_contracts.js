@@ -88,6 +88,7 @@ module.exports = async function (deployer, network, accounts) {
       id: "https://example.org/examples/degree.json",
       typeSchema: "JsonSchemaValidator2018"
     }, // schema
+    "QmW6gFG2DPEBzG66yAunLGJRVWBj1d6MWsrjvhJWUfRu1H"
   );
 
   await deployer.deploy(NebuVC);
